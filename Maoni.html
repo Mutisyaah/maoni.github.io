@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dhamiri — Kenya Campaign Intelligence Platform</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg-primary:#ffffff;--bg-secondary:#f5f5f2;--bg-tertiary:#eeece6;
+    --text-primary:#1a1a18;--text-secondary:#5f5e5a;--text-tertiary:#888780;
+    --border-light:rgba(0,0,0,0.1);--border-mid:rgba(0,0,0,0.18);
+    --radius-md:8px;--radius-lg:12px;
+    --blue-bg:#e6f1fb;--blue-text:#0c447c;--blue-accent:#185fa5;
+    --green-bg:#eaf3de;--green-text:#27500a;--green-accent:#1d9e75;
+    --amber-bg:#faeeda;--amber-text:#633806;--amber-accent:#ba7517;
+    --red-bg:#fcebeb;--red-text:#791f1f;--red-accent:#e24b4a;
+    --purple-bg:#eeedfe;--purple-text:#3c3489;--purple-accent:#534ab7;
+    --pink-bg:#fbeaf0;--pink-text:#72243e;
+  }
+  @media(prefers-color-scheme:dark){
+    :root{
+      --bg-primary:#1e1e1c;--bg-secondary:#2a2a27;--bg-tertiary:#242421;
+      --text-primary:#f0ede6;--text-secondary:#888780;--text-tertiary:#5f5e5a;
+      --border-light:rgba(255,255,255,0.08);--border-mid:rgba(255,255,255,0.15);
+      --blue-bg:#0c2a45;--blue-text:#85b7eb;
+      --green-bg:#0d2e1a;--green-text:#9fe1cb;
+      --amber-bg:#2e1e06;--amber-text:#fac775;
+      --red-bg:#2e0e0e;--red-text:#f09595;
+      --purple-bg:#1a1540;--purple-text:#afa9ec;
+      --pink-bg:#2a0f1c;--pink-text:#ed93b1;
+    }
+  }
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg-tertiary);color:var(--text-primary);min-height:100vh;font-size:14px;line-height:1.5}
+  #app{max-width:960px;margin:0 auto;padding:24px 20px 48px}
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:0.5px solid var(--border-light)}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand-flag{width:30px;height:22px;display:flex;flex-direction:column;border-radius:3px;overflow:hidden;flex-shrink:0}
+  .flag-stripe{flex:1}
+  .brand-name{font-size:20px;font-weight:600;color:var(--text-primary);letter-spacing:-0.03em}
+  .brand-sub{font-size:11px;color:var(--text-secondary);margin-top:1px}
+  .topbar-right{display:flex;align-items:center;gap:8px}
+  .live-badge{background:var(--red-bg);color:var(--red-text);font-size:11px;padding:4px 10px;border-radius:99px;display:flex;align-items:center;gap:5px;font-weight:500}
+  .live-dot{width:6px;height:6px;border-radius:50%;background:#e24b4a;animation:pulse 1.4s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .btn{border:0.5px solid var(--border-mid);background:var(--bg-primary);border-radius:var(--radius-md);padding:7px 14px;font-size:12px;cursor:pointer;color:var(--text-primary);display:inline-flex;align-items:center;gap:6px;transition:background .12s;font-family:inherit}
+  .btn:hover{background:var(--bg-secondary)}
+  .btn-primary{background:var(--text-primary);color:var(--bg-primary);border-color:transparent}
+  .btn-primary:hover{opacity:.85}
+  .btn-sm{padding:5px 10px;font-size:11px}
+  .nav{display:flex;gap:2px;margin-bottom:24px;background:var(--bg-secondary);border-radius:var(--radius-lg);padding:4px;overflow-x:auto}
+  .nav-btn{flex:1;min-width:100px;padding:8px 6px;font-size:12px;border:none;background:none;cursor:pointer;color:var(--text-secondary);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;gap:5px;transition:all .15s;white-space:nowrap;font-family:inherit}
+  .nav-btn.active{background:var(--bg-primary);color:var(--text-primary);font-weight:500;border:0.5px solid var(--border-light)}
+  .nav-btn:hover:not(.active){color:var(--text-primary)}
+  .panel{display:none}
+  .panel.active{display:block}
+  .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+  @media(max-width:600px){.metrics{grid-template-columns:1fr 1fr}}
+  .metric{background:var(--bg-secondary);border-radius:var(--radius-md);padding:14px 16px}
+  .metric .mlabel{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+  .metric .mval{font-size:22px;font-weight:600;color:var(--text-primary)}
+  .metric .mdelta{font-size:11px;margin-top:3px}
+  .card{background:var(--bg-primary);border:0.5px solid var(--border-light);border-radius:var(--radius-lg);padding:16px 20px;margin-bottom:16px}
+  .card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .card-hd h3{font-size:14px;font-weight:500;color:var(--text-primary)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  @media(max-width:640px){.grid2{grid-template-columns:1fr}}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+  @media(max-width:640px){.grid3{grid-template-columns:1fr 1fr}}
+  .seg-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border-light)}
+  .seg-row:last-child{border-bottom:none}
+  .seg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+  .seg-name{flex:1;font-size:12px;color:var(--text-primary)}
+  .bar-wrap{width:110px;height:6px;background:var(--bg-secondary);border-radius:3px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:3px}
+  .seg-pct{font-size:11px;color:var(--text-secondary);width:32px;text-align:right}
+  .badge{font-size:10px;padding:3px 7px;border-radius:99px;font-weight:500}
+  .b-hi{background:var(--green-bg);color:var(--green-text)}
+  .b-md{background:var(--amber-bg);color:var(--amber-text)}
+  .b-lo{background:var(--red-bg);color:var(--red-text)}
+  .b-blue{background:var(--blue-bg);color:var(--blue-text)}
+  .event-row{display:flex;gap:12px;padding:10px 0;border-bottom:0.5px solid var(--border-light);align-items:flex-start}
+  .event-row:last-child{border-bottom:none}
+  .event-date{width:38px;text-align:center;flex-shrink:0}
+  .event-day{font-size:20px;font-weight:600;color:var(--text-primary);line-height:1}
+  .event-mon{font-size:10px;color:var(--text-secondary);text-transform:uppercase}
+  .event-info{flex:1}
+  .event-title{font-size:13px;font-weight:500;color:var(--text-primary)}
+  .event-meta{font-size:11px;color:var(--text-secondary);margin-top:3px}
+  .team-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border-light)}
+  .team-row:last-child{border-bottom:none}
+  .avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+  .team-info{flex:1}
+  .team-name{font-size:13px;font-weight:500;color:var(--text-primary)}
+  .team-role{font-size:11px;color:var(--text-secondary)}
+  .progress-wrap{display:flex;flex-direction:column;gap:8px}
+  .progress-item{display:flex;align-items:center;gap:10px}
+  .progress-label{font-size:12px;color:var(--text-secondary);width:100px;flex-shrink:0}
+  .progress-bar{flex:1;height:6px;background:var(--bg-secondary);border-radius:3px;overflow:hidden}
+  .progress-fill{height:100%;border-radius:3px;transition:width .8s ease}
+  .progress-val{font-size:11px;color:var(--text-secondary);width:34px;text-align:right}
+  input,select,textarea{border:0.5px solid var(--border-mid);border-radius:var(--radius-md);padding:8px 12px;font-size:13px;color:var(--text-primary);background:var(--bg-primary);width:100%;font-family:inherit;outline:none;transition:border-color .15s}
+  input:focus,select:focus,textarea:focus{border-color:var(--text-secondary)}
+  textarea{resize:vertical;min-height:72px;line-height:1.6}
+  select{cursor:pointer}
+  .form-row{display:flex;gap:8px;margin-bottom:10px;align-items:flex-start;flex-wrap:wrap}
+  .flabel{font-size:11px;color:var(--text-secondary);margin-bottom:4px}
+  .fgroup{display:flex;flex-direction:column}
+  .msg-box{background:var(--bg-secondary);border-radius:var(--radius-md);padding:12px 14px;font-size:13px;color:var(--text-primary);line-height:1.7;min-height:64px}
+  .tip{font-size:11px;color:var(--text-secondary);background:var(--bg-secondary);padding:8px 12px;border-radius:var(--radius-md);margin-top:8px;display:flex;gap:7px;align-items:flex-start}
+  .channel-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+  .ch-btn{border:0.5px solid var(--border-light);border-radius:var(--radius-md);padding:10px 6px;text-align:center;cursor:pointer;background:var(--bg-primary);transition:all .15s}
+  .ch-btn.sel{border-color:var(--border-mid);background:var(--bg-secondary)}
+  .ch-btn i{font-size:20px;color:var(--text-secondary);display:block;margin-bottom:4px}
+  .ch-btn.sel i{color:var(--text-primary)}
+  .ch-btn span{font-size:10px;color:var(--text-secondary)}
+  .ch-btn.sel span{color:var(--text-primary);font-weight:500}
+  .vol-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+  .vol-card{border:0.5px solid var(--border-light);border-radius:var(--radius-md);padding:12px;cursor:pointer;transition:all .15s}
+  .vol-card:hover{background:var(--bg-secondary)}
+  .vol-role{font-size:12px;font-weight:500}
+  .vol-count{font-size:11px;opacity:.75;margin-top:3px}
+  .insight-card{border-left:2px solid;padding:10px 14px;margin-bottom:10px;border-radius:0 var(--radius-md) var(--radius-md) 0}
+  .insight-card.ins-blue{border-color:#378add;background:var(--blue-bg)}
+  .insight-card.ins-green{border-color:#639922;background:var(--green-bg)}
+  .insight-card.ins-amber{border-color:#ba7517;background:var(--amber-bg)}
+  .insight-card.ins-red{border-color:#e24b4a;background:var(--red-bg)}
+  .insight-title{font-size:12px;font-weight:600}
+  .insight-body{font-size:11px;color:var(--text-secondary);margin-top:3px;line-height:1.6}
+  .ins-blue .insight-title{color:var(--blue-text)}
+  .ins-green .insight-title{color:var(--green-text)}
+  .ins-amber .insight-title{color:var(--amber-text)}
+  .ins-red .insight-title{color:var(--red-text)}
+  .feed-item{display:flex;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border-light);animation:fadein .4s ease}
+  .feed-item:last-child{border-bottom:none}
+  @keyframes fadein{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .feed-icon{width:30px;height:30px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
+  .feed-content{flex:1}
+  .feed-title{font-size:12px;color:var(--text-primary)}
+  .feed-time{font-size:10px;color:var(--text-secondary);margin-top:2px}
+  .don-bar{margin-bottom:14px}
+  .don-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
+  .don-label{font-size:13px;color:var(--text-primary);font-weight:500}
+  .don-amt{font-size:12px;color:var(--text-secondary)}
+  .don-track{height:8px;background:var(--bg-secondary);border-radius:4px;overflow:hidden}
+  .don-fill{height:100%;border-radius:4px;background:var(--green-accent);transition:width .8s ease}
+  .ai-loading::after{content:'.';animation:ldots 1s infinite steps(4)}
+  @keyframes ldots{0%{content:'.'}25%{content:'..'}50%{content:'...'}75%{content:''}}
+  .api-note{background:var(--amber-bg);color:var(--amber-text);font-size:12px;padding:10px 14px;border-radius:var(--radius-md);margin-bottom:16px;display:flex;gap:8px;align-items:flex-start;border:0.5px solid var(--amber-accent)}
+  .api-key-row{display:flex;gap:8px;margin-top:8px}
+  .api-key-row input{flex:1}
+  #api-key-input{display:none}
+  h2.section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-secondary);margin-bottom:12px}
+
+  /* Maoni-inspired campaign dashboard theme */
+  :root{
+    --bg-primary:#fffdf8;--bg-secondary:#f2eee5;--bg-tertiary:#d8d3c8;
+    --text-primary:#231917;--text-secondary:#6b625a;--text-tertiary:#988f84;
+    --border-light:rgba(90,51,42,.16);--border-mid:rgba(90,51,42,.28);
+    --red-bg:#f3ded8;--red-text:#7e1f18;--red-accent:#9d241b;
+    --green-bg:#e7ead8;--green-text:#364b23;--green-accent:#60733d;
+    --amber-bg:#f3e3c6;--amber-text:#704513;--amber-accent:#b57a25;
+    --blue-bg:#e6e4dc;--blue-text:#4a453e;--blue-accent:#7f756a;
+    --purple-bg:#eadfd8;--purple-text:#6a322e;--purple-accent:#8f4038;
+    --pink-bg:#f0ded8;--pink-text:#743229;
+  }
+  @media(prefers-color-scheme:dark){
+    :root{
+      --bg-primary:#211f1d;--bg-secondary:#302c28;--bg-tertiary:#151312;
+      --text-primary:#f7f1e8;--text-secondary:#c0b5a9;--text-tertiary:#887d72;
+      --border-light:rgba(255,239,218,.12);--border-mid:rgba(255,239,218,.24);
+      --red-bg:#3c1713;--red-text:#ffb4a8;--green-bg:#27301f;--green-text:#d6e4ba;
+      --amber-bg:#39270f;--amber-text:#f2cf94;--blue-bg:#322c28;--blue-text:#ddd2c6;
+      --purple-bg:#39211e;--purple-text:#f0b3aa;--pink-bg:#3c211d;--pink-text:#efb2a6;
+    }
+  }
+  body{
+    background:
+      radial-gradient(circle at 20px 22px,rgba(91,22,30,.24) 0 9px,transparent 10px) 0 0/46px 46px,
+      linear-gradient(180deg,#8f221b 0 240px,#d8d3c8 240px 100%);
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;
+    background:linear-gradient(180deg,rgba(122,31,25,.78),rgba(122,31,25,.18) 38%,rgba(255,255,255,.18) 39%,transparent 54%);
+  }
+  #app{
+    max-width:1120px;padding:28px 20px 56px;display:grid;grid-template-columns:190px minmax(0,1fr);gap:0 18px;
+  }
+  .topbar{
+    grid-column:1/-1;background:#9d241b;color:#fff;margin:0;border:1px solid rgba(255,255,255,.18);
+    border-bottom:none;border-radius:8px 8px 0 0;padding:12px 18px;box-shadow:0 18px 45px rgba(50,20,14,.2);
+  }
+  .brand-name{color:#fff;text-transform:uppercase;font-size:18px;letter-spacing:.02em}
+  .brand-sub{color:rgba(255,255,255,.78);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+  .brand-flag{width:42px;height:42px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.18);background:#fff;padding:4px}
+  .flag-stripe{border-radius:1px}
+  .live-badge{background:rgba(255,255,255,.16);color:#fff}
+  .btn{border-color:var(--border-mid);box-shadow:0 1px 0 rgba(255,255,255,.35) inset}
+  .topbar .btn{background:rgba(255,255,255,.95);color:#7e1f18;border-color:transparent;font-weight:700}
+  .btn-primary{background:#231917;color:#fff}
+  #api-setup{grid-column:1/-1;margin:0 0 14px;border-radius:0 0 8px 8px;background:#fff8e8}
+  .nav{
+    grid-column:1;align-self:start;display:flex;flex-direction:column;gap:0;margin:0;overflow:visible;
+    background:linear-gradient(180deg,#e1ddd2,#c9c2b7);border:1px solid var(--border-light);
+    border-radius:0 0 8px 8px;padding:0;min-height:520px;box-shadow:0 18px 45px rgba(50,20,14,.16);
+  }
+  .nav::after{
+    content:"";height:130px;margin-top:auto;opacity:.55;
+    background:radial-gradient(circle at 6px 6px,rgba(80,55,48,.45) 0 2px,transparent 3px) 0 0/12px 12px;
+  }
+  .nav-btn{
+    flex:0 0 auto;justify-content:flex-start;min-width:0;width:100%;border-radius:0;padding:11px 13px;
+    color:#332722;font-weight:700;border-bottom:1px solid rgba(80,55,48,.12);
+  }
+  .nav-btn.active{background:#9d241b;color:#fff;border:0;border-bottom:1px solid #8c1f18}
+  .nav-btn:hover:not(.active){background:rgba(157,36,27,.08);color:#7e1f18}
+  .panel{grid-column:2;min-width:0}
+  .card,.metric{
+    background:rgba(255,253,248,.96);border-color:var(--border-light);border-radius:7px;
+    box-shadow:0 10px 24px rgba(60,35,25,.08);
+  }
+  .card-hd h3{font-weight:800;text-transform:uppercase;letter-spacing:.02em;color:#1f1715}
+  .metric{border-top:4px solid #9d241b}
+  .metric .mlabel{font-weight:800;color:#766b61}
+  .metric .mval{font-weight:800}
+  .badge{border-radius:4px;text-transform:uppercase;letter-spacing:.04em}
+  .feed-icon,.avatar{border-radius:50%}
+  .don-fill{background:#9d241b}
+  input,select,textarea{background:#fffdf8}
+  @media(max-width:760px){
+    body{background:linear-gradient(180deg,#8f221b 0 150px,#d8d3c8 150px 100%)}
+    #app{display:block;padding:18px 12px 36px}
+    .topbar{border-radius:8px;margin-bottom:12px;align-items:flex-start;gap:12px}
+    .topbar-right{flex-wrap:wrap;justify-content:flex-end}
+    #api-setup{border-radius:8px;margin-bottom:12px}
+    .nav{flex-direction:row;overflow-x:auto;min-height:0;border-radius:8px;margin-bottom:14px}
+    .nav::after{display:none}
+    .nav-btn{width:auto;min-width:132px;justify-content:center}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-flag">
+        <div class="flag-stripe" style="background:#1a1a18"></div>
+        <div class="flag-stripe" style="background:#c0392b"></div>
+        <div class="flag-stripe" style="background:#1d9e75"></div>
+      </div>
+      <div>
+        <div class="brand-name">MAONI</div>
+        <div class="brand-sub">Kenya Campaign Intelligence Platform</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="live-badge"><div class="live-dot"></div>Live</div>
+      <button class="btn btn-sm" onclick="aiAction('Give me a full Kenya campaign strategy briefing covering demographics, outreach, team deployment, and fundraising','briefing-modal')"><i class="ti ti-brain"></i> AI Briefing</button>
+    </div>
+  </div>
+
+        <input type="password" id="api-key-input" placeholder="sk-ant-…" style="flex:1">
+  <div class="nav">
+    <button class="nav-btn active" onclick="goTab('dashboard',this)"><i class="ti ti-layout-dashboard" style="font-size:14px"></i> Dashboard</button>
+    <button class="nav-btn" onclick="goTab('demographics',this)"><i class="ti ti-users" style="font-size:14px"></i> Demographics</button>
+    <button class="nav-btn" onclick="goTab('outreach',this)"><i class="ti ti-speakerphone" style="font-size:14px"></i> Outreach</button>
+    <button class="nav-btn" onclick="goTab('teams',this)"><i class="ti ti-building-community" style="font-size:14px"></i> Regional Teams</button>
+    <button class="nav-btn" onclick="goTab('events',this)"><i class="ti ti-calendar-event" style="font-size:14px"></i> Events</button>
+    <button class="nav-btn" onclick="goTab('donations',this)"><i class="ti ti-heart" style="font-size:14px"></i> Mobilization</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="tab-dashboard" class="panel active">
+    <div class="metrics">
+      <div class="metric"><div class="mlabel">Registered contacts</div><div class="mval">128,450</div><div class="mdelta" style="color:var(--green-accent)"><i class="ti ti-arrow-up" style="font-size:11px"></i> 2,140 this week</div></div>
+      <div class="metric"><div class="mlabel">Active volunteers</div><div class="mval">6,832</div><div class="mdelta" style="color:var(--green-accent)"><i class="ti ti-arrow-up" style="font-size:11px"></i> 47 counties</div></div>
+      <div class="metric"><div class="mlabel">Funds raised (KES)</div><div class="mval">14.2M</div><div class="mdelta" style="color:var(--green-accent)"><i class="ti ti-arrow-up" style="font-size:11px"></i> 78% of target</div></div>
+      <div class="metric"><div class="mlabel">Engagement rate</div><div class="mval">71%</div><div class="mdelta" style="color:var(--amber-accent)"><i class="ti ti-minus" style="font-size:11px"></i> −2pts vs last week</div></div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-hd"><h3>County coverage</h3><span class="badge b-blue">47 counties</span></div>
+        <div style="position:relative;width:100%;height:220px"><canvas id="chartCoverage" role="img" aria-label="Campaign coverage by region">Nairobi 94%, Mt Kenya 87%, Rift Valley 79%, Nyanza 72%, Western 68%, Coast 61%, North Eastern 43%</canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><h3>Live activity feed</h3><span class="badge b-blue" id="feed-count">6 updates</span></div>
+        <div id="live-feed"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><h3>AI strategic insights</h3><button class="btn btn-sm" onclick="refreshInsights()"><i class="ti ti-refresh"></i> Refresh</button></div>
+      <div id="ai-insights">
+        <div class="insight-card ins-blue"><div class="insight-title">Youth mobilization opportunity</div><div class="insight-body">18–30 voters in Kisumu, Nakuru, and Nairobi are 34% less engaged than in 2022. SMS campaigns targeting TVET graduates could recover 12,000+ contacts.</div></div>
+        <div class="insight-card ins-green"><div class="insight-title">Strong base in Mt Kenya region</div><div class="insight-body">Nyeri, Kirinyaga, and Murang'a show 87%+ registration coverage. Focus resources on GOTV rather than new outreach in these areas.</div></div>
+        <div class="insight-card ins-amber"><div class="insight-title">Donation velocity slowing</div><div class="insight-body">Week-on-week donation growth dropped from 18% to 6%. Consider M-Pesa targeted push in diaspora communities — Mombasa diaspora channel underutilized.</div></div>
+        <div class="insight-card ins-red"><div class="insight-title">Team gap: North Eastern</div><div class="insight-body">Mandera, Wajir, and Garissa have fewer than 3 active volunteers per ward. Immediate recruitment needed — these 3 counties hold 280,000+ registered voters.</div></div>
+      </div>
+    </div>
+    <div id="briefing-modal" style="display:none" class="card">
+      <div class="card-hd"><h3>AI campaign briefing</h3><button class="btn btn-sm" onclick="document.getElementById('briefing-modal').style.display='none'"><i class="ti ti-x"></i></button></div>
+      <div class="msg-box" id="briefing-out"></div>
+    </div>
+  </div>
+
+  <!-- DEMOGRAPHICS -->
+  <div id="tab-demographics" class="panel">
+    <div class="card">
+      <div class="card-hd"><h3>Voter segment analysis</h3></div>
+      <div id="seg-list"></div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-hd"><h3>Age distribution — 47 counties</h3></div>
+        <div style="position:relative;width:100%;height:200px"><canvas id="chartAge" role="img" aria-label="Age distribution">18-24: 22%, 25-34: 31%, 35-44: 24%, 45-54: 14%, 55-64: 6%, 65+: 3%</canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><h3>Top issues by county cluster</h3></div>
+        <div style="font-size:12px">
+          <div style="padding:7px 0;border-bottom:0.5px solid var(--border-light)"><span style="font-weight:600;color:var(--text-primary)">Nairobi metro</span><div style="color:var(--text-secondary);margin-top:3px">Housing, unemployment, public transport, security</div></div>
+          <div style="padding:7px 0;border-bottom:0.5px solid var(--border-light)"><span style="font-weight:600;color:var(--text-primary)">Rift Valley</span><div style="color:var(--text-secondary);margin-top:3px">Land rights, pastoralism, water access, devolution</div></div>
+          <div style="padding:7px 0;border-bottom:0.5px solid var(--border-light)"><span style="font-weight:600;color:var(--text-primary)">Nyanza & Western</span><div style="color:var(--text-secondary);margin-top:3px">Fish industry, NHIF access, Lake Victoria projects</div></div>
+          <div style="padding:7px 0;border-bottom:0.5px solid var(--border-light)"><span style="font-weight:600;color:var(--text-primary)">Coast region</span><div style="color:var(--text-secondary);margin-top:3px">Tourism jobs, coastal land titles, devolution funds</div></div>
+          <div style="padding:7px 0"><span style="font-weight:600;color:var(--text-primary)">North Eastern</span><div style="color:var(--text-secondary);margin-top:3px">Drought relief, roads, education, bursaries</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><h3>Identify demographic — any region</h3></div>
+      <div class="form-row">
+        <div class="fgroup" style="flex:1"><div class="flabel">County or sub-county</div><input id="d-region" placeholder="e.g. Kisumu, Turkana, Mathare…"></div>
+        <div class="fgroup" style="flex:1"><div class="flabel">Priority issue</div><select id="d-issue"><option>Economy & jobs</option><option>Land & housing</option><option>Healthcare</option><option>Education</option><option>Security</option><option>Water & infrastructure</option><option>Women's rights</option><option>Youth employment</option></select></div>
+        <div style="margin-top:18px"><button class="btn btn-primary" onclick="analyzeDemo()"><i class="ti ti-brain"></i> Analyze</button></div>
+      </div>
+      <div id="demo-out" style="display:none" class="msg-box"></div>
+    </div>
+  </div>
+
+  <!-- OUTREACH -->
+  <div id="tab-outreach" class="panel">
+    <div class="card">
+      <div class="card-hd"><h3>AI message builder</h3></div>
+      <div class="grid2" style="margin-bottom:10px">
+        <div class="fgroup"><div class="flabel">Target segment</div><select id="o-seg"><option>Young urban professionals (Nairobi)</option><option>Rural farmers (Rift Valley)</option><option>Women voters – suburban</option><option>First-time voters 18–24</option><option>Senior citizens 60+</option><option>Diaspora (Mombasa/Kisumu)</option><option>Traders & SME owners</option></select></div>
+        <div class="fgroup"><div class="flabel">Language</div><select id="o-lang"><option>English</option><option>Kiswahili</option><option>Sheng (Nairobi youth)</option></select></div>
+      </div>
+      <div class="flabel" style="margin-bottom:6px">Channel</div>
+      <div class="channel-row">
+        <div class="ch-btn sel" onclick="selCh(this)"><i class="ti ti-message-2"></i><span>SMS</span></div>
+        <div class="ch-btn" onclick="selCh(this)"><i class="ti ti-mail"></i><span>Email</span></div>
+        <div class="ch-btn" onclick="selCh(this)"><i class="ti ti-brand-whatsapp"></i><span>WhatsApp</span></div>
+        <div class="ch-btn" onclick="selCh(this)"><i class="ti ti-phone-call"></i><span>Call script</span></div>
+      </div>
+      <div class="fgroup" style="margin-bottom:10px"><div class="flabel">Key message / talking point</div><textarea id="o-point" placeholder="e.g. New housing programme — 200,000 affordable units by 2027…"></textarea></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="genMsg()"><i class="ti ti-wand"></i> Generate with AI</button>
+        <button class="btn btn-sm" onclick="aiAction('Give me 2 A/B test versions of a campaign SMS message for Kenyan voters, with different emotional hooks','abt-out')">A/B test</button>
+      </div>
+      <div id="abt-out" style="display:none;margin-top:10px" class="msg-box"></div>
+    </div>
+    <div id="msg-card" class="card" style="display:none">
+      <div class="card-hd"><h3>Generated message</h3><button class="btn btn-sm" onclick="copyMsg()"><i class="ti ti-copy"></i> Copy</button></div>
+      <div class="msg-box" id="msg-out"></div>
+      <div class="tip"><i class="ti ti-bulb" style="flex-shrink:0;margin-top:1px"></i><span id="msg-tip">Crafted for your selected segment and channel.</span></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><h3>Outreach performance — last 30 days</h3></div>
+      <div class="progress-wrap">
+        <div class="progress-item"><span class="progress-label">SMS campaigns</span><div class="progress-bar"><div class="progress-fill" style="width:82%;background:#185fa5"></div></div><span class="progress-val">82%</span></div>
+        <div class="progress-item"><span class="progress-label">WhatsApp</span><div class="progress-bar"><div class="progress-fill" style="width:74%;background:#1d9e75"></div></div><span class="progress-val">74%</span></div>
+        <div class="progress-item"><span class="progress-label">Email</span><div class="progress-bar"><div class="progress-fill" style="width:51%;background:#ba7517"></div></div><span class="progress-val">51%</span></div>
+        <div class="progress-item"><span class="progress-label">Call scripts</span><div class="progress-bar"><div class="progress-fill" style="width:68%;background:#993556"></div></div><span class="progress-val">68%</span></div>
+        <div class="progress-item"><span class="progress-label">Community rallies</span><div class="progress-bar"><div class="progress-fill" style="width:91%;background:#534ab7"></div></div><span class="progress-val">91%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TEAMS -->
+  <div id="tab-teams" class="panel">
+    <div class="metrics">
+      <div class="metric"><div class="mlabel">Region leads</div><div class="mval">47</div><div class="mdelta" style="color:var(--text-secondary)">One per county</div></div>
+      <div class="metric"><div class="mlabel">Ward captains</div><div class="mval">1,450</div><div class="mdelta" style="color:var(--green-accent)">94% deployed</div></div>
+      <div class="metric"><div class="mlabel">Volunteers</div><div class="mval">6,832</div><div class="mdelta" style="color:var(--green-accent)">Active this month</div></div>
+      <div class="metric"><div class="mlabel">Open gaps</div><div class="mval">38</div><div class="mdelta" style="color:var(--red-accent)">Wards uncovered</div></div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-hd"><h3>Regional coordinators</h3><button class="btn btn-sm" onclick="aiAction('What are the best strategies for recruiting and training campaign volunteers across Kenyan counties?','recruit-out')">Recruit tips</button></div>
+        <div id="team-list"></div>
+        <div id="recruit-out" style="display:none;margin-top:10px" class="msg-box"></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><h3>Coverage by region</h3></div>
+        <div class="progress-wrap">
+          <div class="progress-item"><span class="progress-label">Nairobi</span><div class="progress-bar"><div class="progress-fill" style="width:94%;background:#185fa5"></div></div><span class="progress-val">94%</span></div>
+          <div class="progress-item"><span class="progress-label">Central</span><div class="progress-bar"><div class="progress-fill" style="width:87%;background:#185fa5"></div></div><span class="progress-val">87%</span></div>
+          <div class="progress-item"><span class="progress-label">Rift Valley</span><div class="progress-bar"><div class="progress-fill" style="width:79%;background:#1d9e75"></div></div><span class="progress-val">79%</span></div>
+          <div class="progress-item"><span class="progress-label">Nyanza</span><div class="progress-bar"><div class="progress-fill" style="width:72%;background:#1d9e75"></div></div><span class="progress-val">72%</span></div>
+          <div class="progress-item"><span class="progress-label">Western</span><div class="progress-bar"><div class="progress-fill" style="width:68%;background:#ba7517"></div></div><span class="progress-val">68%</span></div>
+          <div class="progress-item"><span class="progress-label">Coast</span><div class="progress-bar"><div class="progress-fill" style="width:61%;background:#ba7517"></div></div><span class="progress-val">61%</span></div>
+          <div class="progress-item"><span class="progress-label">Eastern</span><div class="progress-bar"><div class="progress-fill" style="width:55%;background:#ba7517"></div></div><span class="progress-val">55%</span></div>
+          <div class="progress-item"><span class="progress-label">North Eastern</span><div class="progress-bar"><div class="progress-fill" style="width:43%;background:#e24b4a"></div></div><span class="progress-val">43%</span></div>
+        </div>
+        <button class="btn btn-sm" style="margin-top:12px" onclick="aiAction('Give me a concrete plan to increase volunteer coverage in Mandera, Wajir and Garissa counties in North Eastern Kenya','ne-plan')">Fix N.Eastern gap</button>
+        <div id="ne-plan" style="display:none;margin-top:10px" class="msg-box"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><h3>Add team member</h3></div>
+      <div class="form-row">
+        <div class="fgroup" style="flex:1"><div class="flabel">Full name</div><input id="tm-name" placeholder="e.g. Fatuma Hassan"></div>
+        <div class="fgroup" style="flex:1"><div class="flabel">County</div><select id="tm-county"><option>Nairobi</option><option>Mombasa</option><option>Kisumu</option><option>Nakuru</option><option>Uasin Gishu (Eldoret)</option><option>Nyeri</option><option>Machakos</option><option>Mandera</option><option>Wajir</option><option>Garissa</option><option>Meru</option><option>Kilifi</option><option>Turkana</option><option>Kakamega</option><option>Bungoma</option></select></div>
+        <div class="fgroup" style="flex:1"><div class="flabel">Role</div><select id="tm-role"><option>County coordinator</option><option>Ward captain</option><option>Volunteer</option><option>Data officer</option><option>Events lead</option><option>Fundraising lead</option></select></div>
+        <div style="margin-top:18px"><button class="btn btn-primary" onclick="addMember()"><i class="ti ti-plus"></i> Add</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EVENTS -->
+  <div id="tab-events" class="panel">
+    <div class="grid2">
+      <div class="card">
+        <div class="card-hd"><h3>Upcoming events</h3><button class="btn btn-sm" onclick="aiAction('Help me plan a county-wide voter mobilization rally in Kenya — cover logistics, messaging, volunteer roles, and follow-up strategy','rally-plan')">Plan rally</button></div>
+        <div id="events-list"></div>
+        <div id="rally-plan" style="display:none;margin-top:10px" class="msg-box"></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><h3>Attendance trend</h3></div>
+        <div style="position:relative;width:100%;height:200px"><canvas id="chartEvents" role="img" aria-label="Event attendance by month">Mar: 4200, Apr: 6800, May: 9100, Jun: 7400, Jul: 11200</canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><h3>Create new event</h3></div>
+      <div class="grid2" style="margin-bottom:10px">
+        <div class="fgroup"><div class="flabel">Event name</div><input id="ev-name" placeholder="e.g. Kisumu Youth Town Hall"></div>
+        <div class="fgroup"><div class="flabel">Location</div><input id="ev-loc" placeholder="e.g. Kondele Grounds, Kisumu"></div>
+      </div>
+      <div class="form-row">
+        <div class="fgroup" style="flex:1"><div class="flabel">Date</div><input type="date" id="ev-date"></div>
+        <div class="fgroup" style="flex:1"><div class="flabel">Type</div><select id="ev-type"><option>Rally</option><option>Town hall</option><option>Door-to-door blitz</option><option>Volunteer training</option><option>Fundraiser</option><option>Media briefing</option></select></div>
+        <div class="fgroup" style="flex:1"><div class="flabel">Expected attendance</div><input type="number" id="ev-att" placeholder="500"></div>
+        <div style="margin-top:18px"><button class="btn btn-primary" onclick="addEvent()"><i class="ti ti-plus"></i> Add</button></div>
+      </div>
+      <button class="btn btn-sm" onclick="aiEventPlan()"><i class="ti ti-wand"></i> AI: Generate event brief</button>
+      <div id="event-brief" style="display:none;margin-top:10px" class="msg-box"></div>
+    </div>
+  </div>
+
+  <!-- MOBILIZATION -->
+  <div id="tab-donations" class="panel">
+    <div class="metrics">
+      <div class="metric"><div class="mlabel">Total raised (KES)</div><div class="mval">14.2M</div><div class="mdelta" style="color:var(--green-accent)">78% of 18.2M goal</div></div>
+      <div class="metric"><div class="mlabel">Donors</div><div class="mval">9,341</div><div class="mdelta" style="color:var(--green-accent)">↑ 412 this week</div></div>
+      <div class="metric"><div class="mlabel">M-Pesa share</div><div class="mval">68%</div><div class="mdelta" style="color:var(--text-secondary)">of all donations</div></div>
+      <div class="metric"><div class="mlabel">Avg. donation</div><div class="mval">KES 1,520</div><div class="mdelta" style="color:var(--green-accent)">↑ KES 120 vs last month</div></div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-hd"><h3>Fundraising by county</h3></div>
+        <div class="don-bar"><div class="don-top"><span class="don-label">Nairobi</span><span class="don-amt">KES 4.8M</span></div><div class="don-track"><div class="don-fill" style="width:90%"></div></div></div>
+        <div class="don-bar"><div class="don-top"><span class="don-label">Mombasa</span><span class="don-amt">KES 2.1M</span></div><div class="don-track"><div class="don-fill" style="width:65%"></div></div></div>
+        <div class="don-bar"><div class="don-top"><span class="don-label">Kisumu</span><span class="don-amt">KES 1.7M</span></div><div class="don-track"><div class="don-fill" style="width:52%"></div></div></div>
+        <div class="don-bar"><div class="don-top"><span class="don-label">Nakuru</span><span class="don-amt">KES 1.4M</span></div><div class="don-track"><div class="don-fill" style="width:44%"></div></div></div>
+        <div class="don-bar"><div class="don-top"><span class="don-label">Eldoret</span><span class="don-amt">KES 980K</span></div><div class="don-track"><div class="don-fill" style="width:33%"></div></div></div>
+        <div class="don-bar"><div class="don-top"><span class="don-label">Other counties</span><span class="don-amt">KES 3.1M</span></div><div class="don-track"><div class="don-fill" style="width:38%"></div></div></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><h3>Donation channels</h3></div>
+        <div style="position:relative;width:100%;height:200px"><canvas id="chartDon" role="img" aria-label="Donation by channel: M-Pesa 68%, Bank 18%, Online 9%, Cash 5%">M-Pesa 68%, Bank 18%, Online 9%, Cash 5%</canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><h3>Volunteer mobilization roles</h3><button class="btn btn-sm" onclick="aiAction('What are the best volunteer mobilization and retention strategies for a Kenya political campaign across all 47 counties?','vol-strat')">Strategy</button></div>
+      <div class="vol-grid" id="vol-roles"></div>
+      <div id="vol-strat" style="display:none;margin-top:8px" class="msg-box"></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><h3>AI: Draft donation appeal</h3></div>
+      <div class="form-row">
+        <div class="fgroup" style="flex:1"><div class="flabel">Target audience</div><select id="don-seg"><option>Diaspora Kenyans</option><option>Urban professionals</option><option>Business community</option><option>Youth supporters</option><option>General public</option></select></div>
+        <div class="fgroup" style="flex:1"><div class="flabel">Channel</div><select id="don-ch"><option>WhatsApp</option><option>Email</option><option>SMS</option><option>Social media post</option></select></div>
+        <div style="margin-top:18px"><button class="btn btn-primary" onclick="genAppeal()"><i class="ti ti-wand"></i> Generate</button></div>
+      </div>
+      <div id="appeal-out" style="display:none;margin-top:10px" class="msg-box"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let API_KEY = '';
+
+const segments=[
+  {name:"Young urban professionals (25–35)",pct:28,pri:"high",col:"#185fa5"},
+  {name:"Rural smallholder farmers",pct:24,pri:"high",col:"#1d9e75"},
+  {name:"Women voters – all regions",pct:21,pri:"high",col:"#993556"},
+  {name:"First-time voters (18–24)",pct:15,pri:"mid",col:"#854f0b"},
+  {name:"Traders & SME owners",pct:8,pri:"mid",col:"#534ab7"},
+  {name:"Senior citizens (60+)",pct:4,pri:"low",col:"#5f5e5a"},
+];
+
+const teamData=[
+  {name:"Grace Wanjiku",county:"Nairobi",role:"County coordinator",bg:"#b5d4f4",tc:"#0c447c",ini:"GW",stat:"Active"},
+  {name:"Omar Abdullahi",county:"Mombasa",role:"County coordinator",bg:"#9fe1cb",tc:"#085041",ini:"OA",stat:"Active"},
+  {name:"Jackline Achieng",county:"Kisumu",role:"County coordinator",bg:"#f4c0d1",tc:"#72243e",ini:"JA",stat:"Active"},
+  {name:"Peter Kimani",county:"Nakuru",role:"Ward captain",bg:"#fac775",tc:"#633806",ini:"PK",stat:"Active"},
+  {name:"Amina Hassan",county:"Mandera",role:"Volunteer",bg:"#fcebeb",tc:"#791f1f",ini:"AH",stat:"Needed"},
+];
+
+const eventsData=[
+  {day:"14",mon:"May",title:"Nairobi Youth Rally",loc:"Uhuru Park, Nairobi",type:"Rally",att:"8,000"},
+  {day:"18",mon:"May",title:"Kisumu Town Hall",loc:"Milimani, Kisumu",type:"Town hall",att:"1,200"},
+  {day:"22",mon:"May",title:"Coast Grassroots Blitz",loc:"Mombasa Old Town",type:"Door-to-door",att:"400 vols"},
+  {day:"28",mon:"May",title:"Nakuru Fundraiser Dinner",loc:"Merica Hotel, Nakuru",type:"Fundraiser",att:"350"},
+  {day:"03",mon:"Jun",title:"Eldoret Volunteer Training",loc:"Eldoret Sports Club",type:"Training",att:"200"},
+];
+
+let feedItems=[
+  {icon:"ti-user-plus",col:"#e6f1fb",tc:"#185fa5",title:"142 new contacts registered — Kibera ward",time:"2 min ago"},
+  {icon:"ti-heart",col:"#eaf3de",tc:"#3b6d11",title:"KES 45,000 received via M-Pesa — Diaspora",time:"7 min ago"},
+  {icon:"ti-calendar-event",col:"#faeeda",tc:"#854f0b",title:"Nakuru rally confirmed — 3,400 RSVPs",time:"14 min ago"},
+  {icon:"ti-users",col:"#eeedfe",tc:"#3c3489",title:"New volunteer batch — Meru county (28 people)",time:"31 min ago"},
+  {icon:"ti-speakerphone",col:"#fbeaf0",tc:"#72243e",title:"SMS campaign sent — Nyanza region (12,800)",time:"52 min ago"},
+  {icon:"ti-chart-bar",col:"#e6f1fb",tc:"#185fa5",title:"Engagement spike — North Eastern +22% today",time:"1 hr ago"},
+];
+
+const volRoles=[
+  {role:"Voter registration drives",count:"1,840 active",col:"#e6f1fb",tc:"#185fa5"},
+  {role:"Door-to-door canvassing",count:"2,210 active",col:"#eaf3de",tc:"#3b6d11"},
+  {role:"Social media champions",count:"890 active",col:"#eeedfe",tc:"#534ab7"},
+  {role:"Event logistics teams",count:"620 active",col:"#faeeda",tc:"#854f0b"},
+  {role:"Data collection officers",count:"480 active",col:"#fbeaf0",tc:"#72243e"},
+  {role:"M-Pesa donation drives",count:"792 active",col:"#e1f5ee",tc:"#0f6e56"},
+];
+
+function saveKey(){
+  const k=document.getElementById('api-key-input').value.trim();
+  if(k){API_KEY=k;document.getElementById('api-setup').style.display='none';}
+}
+
+function goTab(id,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  if(btn instanceof HTMLElement)btn.classList.add('active');
+}
+
+function selCh(btn){
+  document.querySelectorAll('.ch-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+async function callAI(sys,user){
+  if(!API_KEY)return'⚠️ Please enter your Anthropic API key at the top of the page to activate AI features.';
+  try{
+    const r=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","x-api-key":API_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:500,system:sys,messages:[{role:"user",content:user}]})
+    });
+    const d=await r.json();
+    if(d.error)return'Error: '+d.error.message;
+    return d.content.map(b=>b.text||'').join('');
+  }catch(e){return'Could not connect to AI. Check your API key and try again.';}
+}
+
+async function showAI(outId,sys,user,extra){
+  const el=document.getElementById(outId);
+  if(!el)return;
+  el.style.display='block';
+  el.textContent='Generating';
+  el.classList.add('ai-loading');
+  const txt=await callAI(sys,user);
+  el.classList.remove('ai-loading');
+  el.textContent=txt;
+  if(extra)extra(txt);
+}
+
+async function aiAction(prompt,outId){
+  const card=document.getElementById(outId);
+  if(card){card.style.display='block';}
+  await showAI(outId,
+    "You are a Kenya political campaign strategist with deep knowledge of Kenyan politics, demographics, and voter behaviour across all 47 counties.",
+    prompt
+  );
+}
+
+async function refreshInsights(){
+  const el=document.getElementById('ai-insights');
+  el.innerHTML='<div class="msg-box ai-loading" id="ins-load">Generating fresh insights</div>';
+  const txt=await callAI(
+    "You are a Kenya campaign analytics expert. Give 4 strategic insights in JSON array format: [{type:'blue|green|amber|red',title:'...',body:'...'}]. Return ONLY valid JSON, no markdown.",
+    "Generate 4 current campaign insights for a Kenya election campaign covering: demographics, outreach, fundraising, and team deployment. Each body under 60 words."
+  );
+  try{
+    const data=JSON.parse(txt.replace(/```json|```/g,'').trim());
+    el.innerHTML=data.map(i=>`<div class="insight-card ins-${i.type}"><div class="insight-title">${i.title}</div><div class="insight-body">${i.body}</div></div>`).join('');
+  }catch(e){
+    el.innerHTML='<div class="msg-box">'+txt+'</div>';
+  }
+}
+
+async function analyzeDemo(){
+  const reg=document.getElementById('d-region').value||'Nairobi';
+  const iss=document.getElementById('d-issue').value;
+  await showAI('demo-out',
+    "You are a Kenyan political campaign analyst. Be specific, factual, and concise about Kenyan demographics and voter behaviour.",
+    `Analyze voters in "${reg}", Kenya focused on "${iss}". 3 short paragraphs: 1) Who they are, 2) Key concerns, 3) Best outreach approach. Under 130 words.`
+  );
+}
+
+async function genMsg(){
+  const seg=document.getElementById('o-seg').value;
+  const lang=document.getElementById('o-lang').value;
+  const ch=document.querySelector('.ch-btn.sel span').textContent;
+  const pt=document.getElementById('o-point').value||'our commitment to serve all Kenyans';
+  document.getElementById('msg-card').style.display='block';
+  await showAI('msg-out',
+    "You are a Kenya campaign messaging expert. Write authentic, culturally resonant outreach. Return ONLY the message text, no labels.",
+    `Write a ${ch} message in ${lang} for "${seg}". Talking point: "${pt}". Under 100 words. Authentic, clear call to action.`,
+    (txt)=>{document.getElementById('msg-tip').textContent=`Crafted for ${seg} via ${ch} in ${lang}. ~${Math.ceil(txt.split(' ').length/238*60)}s read time.`;}
+  );
+}
+
+async function aiEventPlan(){
+  const name=document.getElementById('ev-name').value||'Campaign Event';
+  const loc=document.getElementById('ev-loc').value||'Kenya';
+  const type=document.getElementById('ev-type').value;
+  const att=document.getElementById('ev-att').value||'500';
+  await showAI('event-brief',
+    "You are a Kenya political campaign events strategist. Give practical, specific plans.",
+    `Event plan for: ${name}, ${loc}, type: ${type}, attendance: ${att}. Cover: agenda, volunteer needs, outreach before/after, one key risk. Under 150 words.`
+  );
+}
+
+async function genAppeal(){
+  const seg=document.getElementById('don-seg').value;
+  const ch=document.getElementById('don-ch').value;
+  await showAI('appeal-out',
+    "You are a Kenya political fundraising copywriter. Write compelling, ethical donation appeals. Return ONLY the appeal text.",
+    `Write a ${ch} donation appeal for ${seg} supporting a Kenya campaign. Mention M-Pesa as donation option. Authentic, under 90 words.`
+  );
+}
+
+async function briefingModal(){
+  document.getElementById('briefing-modal').style.display='block';
+  await showAI('briefing-out',
+    "You are a senior Kenya campaign strategist. Give concise, actionable briefings.",
+    "Give a full Kenya campaign strategy briefing covering: top 3 demographic priorities, outreach approach, team deployment focus, and fundraising recommendations. Under 200 words."
+  );
+}
+document.querySelector('.btn-sm[onclick*="briefing-modal"]').onclick=briefingModal;
+
+function copyMsg(){
+  navigator.clipboard.writeText(document.getElementById('msg-out').textContent).catch(()=>{});
+}
+
+function addMember(){
+  const name=document.getElementById('tm-name').value.trim();
+  if(!name)return;
+  const county=document.getElementById('tm-county').value;
+  const role=document.getElementById('tm-role').value;
+  const ini=name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  teamData.unshift({name,county,role,bg:'#eaf3de',tc:'#27500a',ini,stat:'Active'});
+  renderTeam();
+  document.getElementById('tm-name').value='';
+  goTab('teams',document.querySelectorAll('.nav-btn')[3]);
+}
+
+function addEvent(){
+  const name=document.getElementById('ev-name').value.trim();
+  if(!name)return;
+  const loc=document.getElementById('ev-loc').value||'Kenya';
+  const type=document.getElementById('ev-type').value;
+  const att=document.getElementById('ev-att').value||'TBC';
+  const dateVal=document.getElementById('ev-date').value;
+  let day='—',mon='—';
+  if(dateVal){const d=new Date(dateVal);day=d.getDate();mon=d.toLocaleString('en',{month:'short'});}
+  eventsData.unshift({day,mon,title:name,loc,type,att});
+  renderEvents();
+  document.getElementById('ev-name').value='';
+  document.getElementById('ev-loc').value='';
+  document.getElementById('ev-att').value='';
+}
+
+function renderSegs(){
+  document.getElementById("seg-list").innerHTML=segments.map(s=>`
+    <div class="seg-row">
+      <span class="seg-dot" style="background:${s.col}"></span>
+      <span class="seg-name">${s.name}</span>
+      <div class="bar-wrap"><div class="bar-fill" style="width:${s.pct*3.2}%;background:${s.col}"></div></div>
+      <span class="seg-pct">${s.pct}%</span>
+      <span class="badge ${s.pri==='high'?'b-hi':s.pri==='mid'?'b-md':'b-lo'}">${s.pri==='high'?'High priority':s.pri==='mid'?'Medium':'Low'}</span>
+    </div>`).join('');
+}
+
+function renderTeam(){
+  document.getElementById("team-list").innerHTML=teamData.slice(0,6).map(t=>`
+    <div class="team-row">
+      <div class="avatar" style="background:${t.bg};color:${t.tc}">${t.ini}</div>
+      <div class="team-info"><div class="team-name">${t.name}</div><div class="team-role">${t.county} · ${t.role}</div></div>
+      <span class="badge ${t.stat==='Active'?'b-hi':'b-lo'}">${t.stat}</span>
+    </div>`).join('');
+}
+
+function renderEvents(){
+  document.getElementById("events-list").innerHTML=eventsData.slice(0,6).map(e=>`
+    <div class="event-row">
+      <div class="event-date"><div class="event-day">${e.day}</div><div class="event-mon">${e.mon}</div></div>
+      <div class="event-info">
+        <div class="event-title">${e.title}</div>
+        <div class="event-meta"><i class="ti ti-map-pin" style="font-size:11px"></i> ${e.loc} &nbsp;·&nbsp; ${e.type} &nbsp;·&nbsp; ${e.att} expected</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderFeed(){
+  document.getElementById("live-feed").innerHTML=feedItems.slice(0,6).map(f=>`
+    <div class="feed-item">
+      <div class="feed-icon" style="background:${f.col}"><i class="ti ${f.icon}" style="color:${f.tc}"></i></div>
+      <div class="feed-content"><div class="feed-title">${f.title}</div><div class="feed-time">${f.time}</div></div>
+    </div>`).join('');
+  document.getElementById('feed-count').textContent=feedItems.slice(0,6).length+' updates';
+}
+
+function renderVolRoles(){
+  document.getElementById("vol-roles").innerHTML=volRoles.map(v=>`
+    <div class="vol-card" style="background:${v.col}">
+      <div class="vol-role" style="color:${v.tc}">${v.role}</div>
+      <div class="vol-count" style="color:${v.tc}">${v.count}</div>
+    </div>`).join('');
+}
+
+const isDark=matchMedia('(prefers-color-scheme: dark)').matches;
+const gridCol=isDark?'rgba(255,241,224,.08)':'rgba(96,58,43,.1)';
+const labelCol=isDark?'#c0b5a9':'#6b625a';
+const campaignRed='#9d241b';
+const campaignMaroon='#681914';
+const campaignTan='#d8a45d';
+const campaignOlive='#60733d';
+const campaignGrey='#8d877f';
+
+new Chart(document.getElementById('chartCoverage'),{type:'bar',data:{
+  labels:['Nairobi','Mt Kenya','Rift Valley','Nyanza','Western','Coast','N.Eastern'],
+  datasets:[{label:'Coverage %',data:[94,87,79,72,68,61,43],backgroundColor:[campaignMaroon,campaignRed,campaignRed,campaignTan,campaignTan,campaignOlive,campaignGrey],borderRadius:4}]
+},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{max:100,ticks:{color:labelCol,callback:v=>v+'%'},grid:{color:gridCol}},x:{ticks:{color:labelCol},grid:{display:false}}}}});
+
+new Chart(document.getElementById('chartAge'),{type:'bar',data:{
+  labels:['18–24','25–34','35–44','45–54','55–64','65+'],
+  datasets:[{label:'Voters %',data:[22,31,24,14,6,3],backgroundColor:campaignRed,borderRadius:3}]
+},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{color:labelCol,callback:v=>v+'%'},grid:{color:gridCol}},x:{ticks:{color:labelCol},grid:{display:false}}}}});
+
+new Chart(document.getElementById('chartEvents'),{type:'line',data:{
+  labels:['Mar','Apr','May','Jun','Jul'],
+  datasets:[{label:'Attendance',data:[4200,6800,9100,7400,11200],borderColor:campaignRed,backgroundColor:'rgba(157,36,27,.12)',tension:.35,pointRadius:4,pointBackgroundColor:campaignRed,fill:true}]
+},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{color:labelCol},grid:{color:gridCol}},x:{ticks:{color:labelCol},grid:{display:false}}}}});
+
+new Chart(document.getElementById('chartDon'),{type:'doughnut',data:{
+  labels:['M-Pesa 68%','Bank transfer 18%','Online card 9%','Cash 5%'],
+  datasets:[{data:[68,18,9,5],backgroundColor:[campaignRed,campaignTan,campaignOlive,campaignGrey],borderWidth:0}]
+},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:true,position:'right',labels:{color:labelCol,font:{size:11},boxWidth:10,padding:10}}}}});
+
+renderSegs();renderTeam();renderEvents();renderFeed();renderVolRoles();
+
+const liveUpdates=[
+  ()=>({icon:"ti-user-plus",col:"#e6f1fb",tc:"#185fa5",title:`${Math.floor(Math.random()*60)+20} new contacts — ${['Westlands','Kibera','Mathare','Langata','Eastleigh'][Math.floor(Math.random()*5)]}`,time:"just now"}),
+  ()=>({icon:"ti-heart",col:"#eaf3de",tc:"#3b6d11",title:`KES ${(Math.floor(Math.random()*90)+10)*1000} received via M-Pesa`,time:"just now"}),
+  ()=>({icon:"ti-users",col:"#eeedfe",tc:"#3c3489",title:`${Math.floor(Math.random()*30)+5} volunteers registered — ${['Kisumu','Nakuru','Mombasa','Eldoret','Nyeri'][Math.floor(Math.random()*5)]}`,time:"just now"}),
+];
+
+setInterval(()=>{
+  feedItems.unshift(liveUpdates[Math.floor(Math.random()*liveUpdates.length)]());
+  if(feedItems.length>10)feedItems.pop();
+  renderFeed();
+},14000);
+</script>
+</body>
+</html>
